@@ -44,6 +44,16 @@ public:
   }
 
   /**
+   * Get the squared distance to the destination given the lat,lng. Callers taking a minimum
+   * over several destinations can compare these and pay for a single sqrt on the winner.
+   * @param   ll  Current latitude, longitude.
+   * @return  Returns the squared distance (meters squared) to the destination.
+   */
+  auto GetDistanceSquared(const midgard::PointLL& ll) const {
+    return distapprox_.DistanceSquared(ll);
+  }
+
+  /**
    * Get the A* heuristic given the distance to the destination.
    * @param   distance  Distance (meters) to the destination.
    * @return  Returns an estimate of the cost to the destination.

@@ -141,7 +141,8 @@ CostMatrix::CostMatrix(const boost::property_tree::ptree& config)
                    static_cast<uint32_t>(1))),
       access_mode_(kAutoAccess),
       mode_(travel_mode_t::kDrive), locs_count_{0, 0}, locs_remaining_{0, 0},
-      current_pathdist_threshold_(0), targets_{new ReachedMap}, sources_{new ReachedMap} {
+      current_pathdist_threshold_(0), astar_cost_factor_(1.0f), targets_{new ReachedMap},
+      sources_{new ReachedMap} {
 }
 
 CostMatrix::~CostMatrix() {
@@ -407,6 +408,7 @@ void CostMatrix::Initialize(
   locs_count_[MATRIX_REV] = target_locations.size();
   astar_heuristics_[MATRIX_FORW].resize(target_locations.size());
   astar_heuristics_[MATRIX_REV].resize(source_locations.size());
+  astar_cost_factor_ = costing_->AStarCostFactor();
 
   // if costing has no hierarchy limits set, fall back to the defaults passed via the config
   const auto& hlimits = costing_->GetHierarchyLimits();
@@ -444,7 +446,7 @@ void CostMatrix::Initialize(
       hierarchy_limits_[is_fwd][i] = hlimits;
       // for each source/target init the other direction's astar heuristic
       auto& ll = locations[i].ll();
-      astar_heuristics_[!is_fwd][i].Init({ll.lng(), ll.lat()}, costing_->AStarCostFactor());
+      astar_heuristics_[!is_fwd][i].Init({ll.lng(), ll.lat()}, astar_cost_factor_);
 
       // get the min heuristic to all targets/sources for this source's/target's adjacency list
       float min_heuristic = std::numeric_limits<float>::max();
@@ -1435,13 +1437,15 @@ float CostMatrix::GetAstarHeuristic(const uint32_t loc_idx, const PointLL& ll) c
     return 0.f;
   }
 
-  auto min_cost = std::numeric_limits<float>::max();
+  // every heuristic was initialized with the same cost factor, so the closest opposing location
+  // is the one with the smallest squared distance: take the minimum first and sqrt only the winner
+  auto min_dist_sq = std::numeric_limits<double>::max();
   for (const auto other_idx : locs_status_[FORWARD][loc_idx].unfound_connections) {
-    const auto cost = astar_heuristics_[FORWARD][other_idx].Get(ll);
-    min_cost = std::min(cost, min_cost);
+    min_dist_sq =
+        std::min(astar_heuristics_[FORWARD][other_idx].GetDistanceSquared(ll), min_dist_sq);
   }
 
-  return min_cost;
+  return sqrtf(min_dist_sq) * astar_cost_factor_;
 };
 
 } // namespace thor

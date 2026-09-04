@@ -146,6 +146,10 @@ protected:
   // A* heuristics for both trees and each location
   std::array<std::vector<AStarHeuristic>, 2> astar_heuristics_;
 
+  // shared by every heuristic above, which is what lets GetAstarHeuristic minimize over
+  // squared distances and scale once
+  float astar_cost_factor_;
+
   // List of best connections found so far
   std::vector<BestCandidate> best_connection_;
 
