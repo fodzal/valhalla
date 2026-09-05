@@ -54,6 +54,14 @@ public:
   }
 
   /**
+   * Get the cost factor this heuristic was initialized with.
+   * @return  Returns the factor distances are multiplied by.
+   */
+  float costfactor() const {
+    return costfactor_;
+  }
+
+  /**
    * Get the A* heuristic given the distance to the destination.
    * @param   distance  Distance (meters) to the destination.
    * @return  Returns an estimate of the cost to the destination.

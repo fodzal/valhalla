@@ -10,6 +10,7 @@
 #include <ankerl/unordered_dense.h>
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <vector>
 
@@ -1441,8 +1442,9 @@ float CostMatrix::GetAstarHeuristic(const uint32_t loc_idx, const PointLL& ll) c
   // is the one with the smallest squared distance: take the minimum first and sqrt only the winner
   auto min_dist_sq = std::numeric_limits<double>::max();
   for (const auto other_idx : locs_status_[FORWARD][loc_idx].unfound_connections) {
-    min_dist_sq =
-        std::min(astar_heuristics_[FORWARD][other_idx].GetDistanceSquared(ll), min_dist_sq);
+    const auto& heuristic = astar_heuristics_[FORWARD][other_idx];
+    assert(heuristic.costfactor() == astar_cost_factor_);
+    min_dist_sq = std::min(heuristic.GetDistanceSquared(ll), min_dist_sq);
   }
 
   return sqrtf(min_dist_sq) * astar_cost_factor_;
